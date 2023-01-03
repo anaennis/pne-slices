@@ -6,7 +6,28 @@ from numpy.polynomial import Polynomial as poly
 import matplotlib.pyplot as plt
 
 
-cube = Cube('ngc584.fits')
+import argparse
+import timeit
+
+tic=timeit.default_timer()
+
+parser=argparse.ArgumentParser()
+
+parser.add_argument("-g", "--Galaxy", help = "Galaxy name")
+parser.add_argument("-r", "--Run", help = "Folder tree")
+
+args = parser.parse_args()
+
+galaxy = args.Galaxy
+folder = args.Run
+
+
+os.chdir(folder)
+
+nm = '{}.fits'.format(galaxy)
+
+
+cube = Cube(nm)
 
 cont1 = cube.clone(data_init=np.empty, var_init=np.zeros)
 
@@ -19,4 +40,10 @@ for sp, co in zip(iter_spe(cube), iter_spe(cont1)):
         count += 1
 print(count)
 
-cont1.write("ngc584cont.fits")
+nm2 = '{}cont.fits'.format(galaxy)
+
+cont1.write(nm2)
+
+toc = timeit.default_timer()
+lap = toc - tic
+print(lap)
