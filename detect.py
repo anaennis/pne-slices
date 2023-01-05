@@ -9,39 +9,42 @@ from scipy.stats import norm
 from scipy.optimize import curve_fit
 from numpy import asarray as ar,exp
 import scipy.integrate as integrate
+import os
 
-styling = {
-        'text.usetex' : True,
-        'lines.linewidth' : 2,
-        'font.family' : 'serif',
-        'axes.prop_cycle' : cycler('color', ['#EE6666', '#3388BB', '#9988DD',
-                 '#EECC55', '#88BB44', '#FFBBBB']),
-        'axes.labelsize' : 20,
-        'legend.fontsize' : 15,
-        "xtick.labelsize": 15,
-        "ytick.labelsize": 15,
-        'ytick.major.size' : 5,
-        'ytick.minor.size' : 4,
-        'xtick.major.size' : 5,
-        'xtick.minor.size' : 4,
-        'xtick.direction' : 'inout',
-        'ytick.direction' : 'inout',  
-}
+import argparse 
 
-mpl.rcParams.update(styling)
+parser = argparse.ArgumentParser()
 
-name = 'ngc1387'
-z = 0.0043
-oiii_1 = 5021.5216 
-oiii_2 = 5038.048
+parser=argparse.ArgumentParser()
+
+parser.add_argument("-g", "--Galaxy", help = "Galaxy name")
+parser.add_argument("-p", "--Path", help = "Path")
+parser.add_argument("-z", "--Redshift", help = "Redshift", type=float)
+
+
+
+args = parser.parse_args()
+
+galaxy = args.Galaxy
+path = args.Path
+z = args.Redshift
+
+os.chdir(path)
+
+
+z1,z2= [z-0.0016,z+0.0016]
+
+
+oiii_1 =  5008*z1 + 5008
+oiii_2 = 5008*z2+5008
 
 # we read the output of sextractor
 
 spec = {}
 
-for i in range(15):
+for i in range(13):
     sli = 0+i
-    cat_tmp = 'slice-{}.cat'.format(i)
+    cat_tmp = '{}-{}.cat'.format(galaxy,i)
     str_tmp = pd.read_csv(cat_tmp,delim_whitespace=True,comment='#',names=["x","y","ra","dec","mag","x2","y2","class"])
     nm_tmp = 'sli_{}'.format(i)
     spec[nm_tmp] = str_tmp
@@ -50,7 +53,7 @@ for i in range(15):
 # matching since the criteria says we need a source to appear in at least three consecutive slices     
 cat = {}
 
-for m in range(0,13):
+for m in range(0,11):
     
     cat_cen='sli_{}'.format(m+1)
     x,y = spec[cat_cen]['x'],spec[cat_cen]['y']
@@ -104,7 +107,7 @@ y0 = cati[:,1]
 
 cat_tmp = cat['cat_1']
 
-for m in range(2,13):
+for m in range(2,11):
     cat_nm = 'cat_{}'.format(m)
     for i in range(len(cat[cat_nm])):
         x = cat[cat_nm][i][0]
@@ -122,6 +125,8 @@ cat_fin = np.array(cat_tmp)
 x,y = cat_fin[:,0],cat_fin[:,1]
 ra,dec = cat_fin[:,2],cat_fin[:,3]
 
+f = len(x)
+
 positions = []
 pos_fin = []
 for i in range(len(x)):
@@ -130,7 +135,7 @@ for i in range(len(x)):
 
 table = {}
 for i in range(13):
-    sliu = '{}-{}_sliun.fits'.format(name,i)
+    sliu = '{}-{}_sliun.fits'.format(galaxy,i)
     tmp = 'phot_{}'.format(i)
     aperture = CircularAperture(positions,r=3.)
     hdu = fits.open(sliu)
@@ -141,15 +146,15 @@ for i in range(13):
 aux = []
 tot = len(table[tmp]['xcenter'].value)
 
-for k in range(25,26):
+for k in range(2,3):
     for i in range(13):
         tmp = 'phot_{}'.format(i)
         aux.append(table[tmp][k]['aperture_sum'])
 wave = np.arange(oiii_1,oiii_2-1.25,1.25).tolist()
 
 
-sp = np.array(aux[2:12])
-wv = np.array(wave[2:12])
+sp = np.array(aux[0:12])
+wv = np.array(wave[0:12])
 
 mean,std = norm.fit(wv)
 x = wv
@@ -159,14 +164,14 @@ y = sp
 def gaus(x,a,me,st,g):
     return a*exp(-(x-me)**2/(2*st**2))+g
 
-flag= np.ones(67)
-det = np.zeros(67)
-flux = np.zeros(67)
-err = np.zeros(67)
-cen = np.zeros(67)
+flag= np.ones(f)
+det = np.zeros(f)
+flux = np.zeros(f)
+err = np.zeros(f)
+cen = np.zeros(f)
 tmp = []
 spec= []
-vrad = np.zeros(67)
+vrad = np.zeros(f)
 oiii = (z+1)*5008
 
 g = 0
@@ -188,10 +193,10 @@ for k in range(len(flag)):
         popt,pcov = curve_fit(gaus,x,y,p0=[max(sp),mean,std,g],bounds=((0,5000,-np.inf,-np.inf),(10000,5500,np.inf,np.inf)))
         det[k] = np.linalg.det(pcov)
         
-        if((det[k]==0)or(np.log10(det[k])>3.5)or(popt[3]>0)):
+        if((det[k]==0)or(np.log10(det[k])>5)or(popt[3]>0)):
             flag[k] = 1
         else:
-            tmp = integrate.quad(gaus,5020,5040,args=(popt[0],popt[1],popt[2],0))
+            tmp = integrate.quad(gaus,oiii_1,oiii_2,args=(popt[0],popt[1],popt[2],0))
             flux[k] = tmp[0]
             err[k] = tmp[1]
             flag[k] = 0
@@ -209,12 +214,34 @@ for i in range(len(flag)):
     
 fin = np.array(final)
 
-catalogue = "./{}_pne.cat".format(name)
+
+fin = pd.DataFrame(fin,columns=['ra','dec','x','y','flux','cen'])
+
+ar = []
+for i in range(len(fin['x'])):
+    x = fin['x'][i]
+    y = fin['y'][i]
+    x0 = fin['x']
+    y0 = fin['y']
+    if(np.any((np.sqrt(np.power((x-x0),2)+np.power((y-y0),2)))<0.5)):
+        ind = np.where((np.sqrt(np.power((x-x0),2)+np.power((y-y0),2)))<0.5)
+        for j in range(len(ind[0])):
+            if(ind[0][j]!=i):
+                if(np.all(ind[0][j]!=ar)):
+                    ar.append(i)   
+            
+fin = fin.drop(ar)
+fin = fin.reset_index(drop=True)
+fin = fin.sort_values(by=['x','y'])
+fin = fin.reset_index(drop=True)
+ 
+
+catalogue = "./{}_pne.cat".format(galaxy)
 np.savetxt(catalogue,fin)
 
 
 ra = cat_fin[:,2]
 dec = cat_fin[:,3]
 cat_vrad = np.transpose([ra,dec,vrad])
-catv = "./{}_vrad_wcs.cat".format(name)
+catv = "./{}_vrad_wcs.cat".format(galaxy)
 np.savetxt(catv,cat_vrad)

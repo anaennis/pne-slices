@@ -4,7 +4,7 @@ from mpdaf.obj import Spectrum,Cube,WCS,WaveCoord,iter_spe
 import astropy.units as u
 from numpy.polynomial import Polynomial as poly
 import matplotlib.pyplot as plt
-
+import os
 
 import argparse
 import timeit
@@ -44,6 +44,12 @@ nm2 = '{}cont.fits'.format(galaxy)
 
 cont1.write(nm2)
 
+emi = cube - cont1
+nm3 = '{}emi.fits'.format(galaxy)
+emi.write(nm3)
+
 toc = timeit.default_timer()
 lap = toc - tic
 print(lap)
+
+

@@ -16,8 +16,23 @@ import warnings
 import glob
 import os
 
-name = '1387'
+import argparse 
 
+parser = argparse.ArgumentParser()
+
+parser=argparse.ArgumentParser()
+
+parser.add_argument("-g", "--Galaxy", help = "Galaxy name")
+parser.add_argument("-p", "--Path", help = "Path")
+
+
+
+args = parser.parse_args()
+
+galaxy = args.Galaxy
+path = args.Path
+
+os.chdir(path)
 #function to generate an arbitrary wl range of MUSE. Full coverage: (3721)*1.25+4699.625
 def wl(N, crpix, crdelt, crval):
     """
@@ -27,25 +42,22 @@ def wl(N, crpix, crdelt, crval):
     crval: lambda de referencia/inicio
     """
     return (N+1-crpix)*crdelt + crval
-CRPIX1 = 1.
-CRDEL1 = 1.25
-CRVAL1 = 4699.25
 
-catalogue = "./{}_.cat".format(name)
-sources = pd.read_csv('fluxes.cat',delim_whitespace=True,names=['ra','dec','xcentroid','ycentroid','flux','det'])
-pos = sources[['xcentroid', 'ycentroid']].values #pos contains only (x,y) positions #here goes your catalogue if you already have one
+
+catalogue = "{}_pne.cat".format(galaxy)
+sources = pd.read_csv(catalogue,delim_whitespace=True,names=['ra','dec','xcentroid','ycentroid','flux','cen'])
+pos = sources[['xcentroid', 'ycentroid']].values #pos contains only (x,y) positions 
 apertures = CircularAperture(pos, r=5) #create the apertures for the pos pixel locations within a radius r
 annulus_apertures = CircularAnnulus(pos, r_in=5, r_out=8) #create an annulus to be used as background 
 annulus_masks = annulus_apertures.to_mask(method='center')
 
-cube = "./{}.fits".format(name) 
+cube = "./../{}.fits".format(galaxy) 
 image = fits.open(cube) #read MUSE cube or DATACUBE_FINAL
 #extract useful values from cube header
 CRPIX1 = image[1].header['CRPIX3']
 CRDEL1 = image[1].header['CD3_3']
 CRVAL1 = image[1].header['CRVAL3']
 
-%%time 
 
 # This routine was adapted from the Astropy-photutils package.
 # Performs aperture extractions + background substraction (pre-defined annulus within r_in and r_out from 2 cells above)
@@ -91,6 +103,6 @@ for n_slice in slices_to_extract: #receives the n-th slice index to be extracted
         labels = ['id', 'aper_sum_bkgsub', 'total_error']
         spec = pd.merge(spec, phot[labels], on='id')
         
-    
-spec.to_csv('1387_aper_phot.csv', index=False) #por favor, guarda los resultados donde te sea seguro :D
+nm_fin = '{}_aper_phot.csv'.format(galaxy)
+spec.to_csv(nm_fin, index=False)
 #each coma separated column after the stars id, xcenter, and ycenter contains the flux and error of each slice
