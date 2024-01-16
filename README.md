@@ -9,6 +9,4 @@ General guide:
 - sixth, detect.py applies delf method
 - seventh, fgran_fluxes uses an adaptation of felipe gran's method to calculate the fluxes
 - eighth, diagnostic.ipynb is a notebook that creates a match between the catalogues, allows the visualization of the lines and creates diagnostic diagrams
-
-
 - extra: important_data generates a file with CRVAL and other values for the original and the emission lines cubes
