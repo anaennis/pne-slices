@@ -24,6 +24,7 @@ parser=argparse.ArgumentParser()
 
 parser.add_argument("-g", "--Galaxy", help = "Galaxy name")
 parser.add_argument("-p", "--Path", help = "Path")
+parser.add_argument("-c", "--Catalog", help = "PNe catalog")
 
 
 
@@ -31,6 +32,7 @@ args = parser.parse_args()
 
 galaxy = args.Galaxy
 path = args.Path
+cat = args.Catalog
 
 os.chdir(path)
 #function to generate an arbitrary wl range of MUSE. Full coverage: (3721)*1.25+4699.625
@@ -44,14 +46,14 @@ def wl(N, crpix, crdelt, crval):
     return (N+1-crpix)*crdelt + crval
 
 
-catalogue = "{}_pne.cat".format(galaxy)
+catalogue = cat
 sources = pd.read_csv(catalogue,delim_whitespace=True,names=['ra','dec','xcentroid','ycentroid','flux','cen'])
 pos = sources[['xcentroid', 'ycentroid']].values #pos contains only (x,y) positions 
 apertures = CircularAperture(pos, r=5) #create the apertures for the pos pixel locations within a radius r
 annulus_apertures = CircularAnnulus(pos, r_in=5, r_out=8) #create an annulus to be used as background 
 annulus_masks = annulus_apertures.to_mask(method='center')
 
-cube = "./../{}.fits".format(galaxy) 
+cube = "../{}.fits".format(galaxy) 
 image = fits.open(cube) #read MUSE cube or DATACUBE_FINAL
 #extract useful values from cube header
 CRPIX1 = image[1].header['CRPIX3']

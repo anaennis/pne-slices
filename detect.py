@@ -183,8 +183,8 @@ for k in range(len(flag)):
 
     wave = np.arange(oiii_1,oiii_2-1.25,1.25).tolist()
     
-    sp = np.array(spec[2:10])
-    wv = np.array(wave[2:10])
+    sp = np.array(spec[1:12])
+    wv = np.array(wave[1:12])
     mean,std = norm.fit(wv)
     x = wv
     y = sp
@@ -193,7 +193,7 @@ for k in range(len(flag)):
         popt,pcov = curve_fit(gaus,x,y,p0=[max(sp),mean,std,g],bounds=((0,5000,-np.inf,-np.inf),(10000,5500,np.inf,np.inf)))
         det[k] = np.linalg.det(pcov)
         
-        if((det[k]==0)or(np.log10(det[k])>5)or(popt[3]>0)):
+        if((det[k]==0)or(np.log10(det[k])>50)or(popt[3]>0)):
             flag[k] = 1
         else:
             tmp = integrate.quad(gaus,oiii_1,oiii_2,args=(popt[0],popt[1],popt[2],0))

@@ -30,12 +30,12 @@ z = args.Redshift
 galaxyem = args.Emission
 
 os.chdir(path)
-filename_emi = "{}.fits".format(galaxyem)
+filename_emi = "../{}.fits".format(galaxyem)
 emi = Cube(filename_emi)
 
 # we choose a random pixel just to get the wavelength-number relation
 
-sp1 = emi[:,200,200]
+sp1 = emi[:,100,100]
 
 # define redshift
 oiii = 5008*z + 5008

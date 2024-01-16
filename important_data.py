@@ -18,7 +18,7 @@ path = args.Path
 
 os.chdir(path)
 
-cube = "./../{}.fits".format(galaxy) 
+cube = "{}.fits".format(galaxy) 
 image = fits.open(cube) #read MUSE cube or DATACUBE_FINAL
 #extract useful values from cube header
 CRPIX1 = image[1].header['CRPIX3']
@@ -26,7 +26,7 @@ CRDEL1 = image[1].header['CD3_3']
 CRVAL1 = image[1].header['CRVAL3']
 
 
-emi = "./../{}emi.fits".format(galaxy) 
+emi = "{}emi.fits".format(galaxy) 
 image2 = fits.open(cube) #read MUSE cube or DATACUBE_FINAL
 #extract useful values from cube header
 CRPIX2 = image2[1].header['CRPIX3']
