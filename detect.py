@@ -42,18 +42,19 @@ oiii_2 = 5008*z2+5008
 
 spec = {}
 
-for i in range(13):
-    sli = 0+i
+for i in range(1,14):
+    sli = i
     cat_tmp = '{}-{}.cat'.format(galaxy,i)
     str_tmp = pd.read_csv(cat_tmp,delim_whitespace=True,comment='#',names=["x","y","ra","dec","mag","x2","y2","class"])
     nm_tmp = 'sli_{}'.format(i)
     spec[nm_tmp] = str_tmp
     
+    
 
 # matching since the criteria says we need a source to appear in at least three consecutive slices     
 cat = {}
 
-for m in range(0,11):
+for m in range(1,12):
     
     cat_cen='sli_{}'.format(m+1)
     x,y = spec[cat_cen]['x'],spec[cat_cen]['y']
@@ -72,14 +73,14 @@ for m in range(0,11):
     
     dist = {}
     cat_t = []
-    cat_nm = 'cat_{}'.format(m+1)
+    cat_nm = 'cat_{}'.format(m)
     
     for i in range(len(x)):
             dist0 = np.sqrt(np.power((x[i]-x0),2)+np.power((y[i]-y0),2))
             dist1 = np.sqrt(np.power((x[i]-x1),2)+np.power((y[i]-y1),2))
-            if((np.any(dist0<0.5))and(np.any(dist1<0.5))):
-                a = np.where(dist0<0.5)
-                b = np.where(dist1<0.5)
+            if((np.any(dist0<0.8))and(np.any(dist1<0.8))):
+                a = np.where(dist0<0.8)
+                b = np.where(dist1<0.8)
 
                 if((len(a)>1)or(len(b)>1)):
                     print('Error in',x[i],y[i])
@@ -101,23 +102,30 @@ for m in range(0,11):
     cat[cat_nm] = cat_t
     
 # we check for repetitions
-cati = np.array(cat['cat_1'])
-x0 = cati[:,0]
-y0 = cati[:,1]
-
-cat_tmp = cat['cat_1']
-
-for m in range(2,11):
+cat_tmp = list(cat['cat_1'])
+dist = 0.8
+epsilon = 1e-9
+#for m in range(2,12):
+for m in range(2,12):
     cat_nm = 'cat_{}'.format(m)
-    for i in range(len(cat[cat_nm])):
-        x = cat[cat_nm][i][0]
-        y = cat[cat_nm][i][1]
+    current_cat = cat[cat_nm]
+
+    for i in range(len(current_cat)):
+        x = current_cat[i][0]
+        y = current_cat[i][1]
         
-        dist = 0.5
-        if(np.all(np.sqrt(np.power((x-x0),2)+np.power((y-y0),2))>dist)):
-            values = cat[cat_nm][i]
+        current_base = np.array(cat_tmp)
+        x0 = current_base[:,0]
+        y0 = current_base[:,1]
+
+        distances = np.sqrt(np.power((x-x0),2)+np.power((y-y0),2))
+        #print(len(distances))
+        #print((distances))
+        if(np.all(distances)>dist-epsilon):
+            values = current_cat[i]
+            #print('found an obj:',values)
             cat_tmp.append(values)
-            
+   
 cat_fin = np.array(cat_tmp)
 
 
@@ -134,32 +142,24 @@ for i in range(len(x)):
     pos_fin.append([ra[i],dec[i],x[i],y[i]])
 
 table = {}
-for i in range(13):
+for i in range(16):
     sliu = '{}-{}_sliun.fits'.format(galaxy,i)
     tmp = 'phot_{}'.format(i)
     aperture = CircularAperture(positions,r=3.)
     hdu = fits.open(sliu)
     data = hdu[1].data
-    table[tmp] = aperture_photometry(data,aperture)
+    error_data = hdu[2].data
+    table[tmp] = aperture_photometry(data,aperture,error=error_data)
 
 # we fit gaussians to make sure there is a signal
-aux = []
-tot = len(table[tmp]['xcenter'].value)
+#aux = []
+#tot = len(table[tmp]['xcenter'].value)
 
-for k in range(2,3):
-    for i in range(13):
-        tmp = 'phot_{}'.format(i)
-        aux.append(table[tmp][k]['aperture_sum'])
-wave = np.arange(oiii_1,oiii_2-1.25,1.25).tolist()
-
-
-sp = np.array(aux[0:12])
-wv = np.array(wave[0:12])
-
-mean,std = norm.fit(wv)
-x = wv
-y = sp
-
+#for k in range(2,3):
+#    for i in range(1,16):
+#        tmp = 'phot_{}'.format(i)
+#        aux.append(table[tmp][k]['aperture_sum'])
+        
 
 def gaus(x,a,me,st,g):
     return a*exp(-(x-me)**2/(2*st**2))+g
@@ -174,44 +174,95 @@ spec= []
 vrad = np.zeros(f)
 oiii = (z+1)*5008
 
+MIN_SNR_AMPLITUDE = 0.5
+MAX_REDUCED_CHI2 = 2.0
+MAX_FWHM = 10.0
+MIN_FWHM = 0.001
+
 g = 0
 for k in range(len(flag)):
     spec = []
-    for i in range(13):
+    spec_err = []
+    for i in range(16):
         tmp = 'phot_{}'.format(i)
         spec.append(table[tmp][k]['aperture_sum'])
+        spec_err.append(table[tmp][k]['aperture_sum_err'])
 
-    wave = np.arange(oiii_1,oiii_2-1.25,1.25).tolist()
+    wave = np.arange(oiii_1,oiii_1+20,1.25).tolist()
+
+    sp = np.array(spec[0:16])
+    wv = np.array(wave[0:16])
+    sp_err = np.array(spec_err[0:16])
     
-    sp = np.array(spec[1:12])
-    wv = np.array(wave[1:12])
-    mean,std = norm.fit(wv)
+    #df = pd.DataFrame({'spec':sp,'wave':wv})
+    #df.to_csv('test.csv')
+    mean_init,std_init = norm.fit(wv)
     x = wv
     y = sp
-
+    print(k)
+    
     try:
-        popt,pcov = curve_fit(gaus,x,y,p0=[max(sp),mean,std,g],bounds=((0,5000,-np.inf,-np.inf),(10000,5500,np.inf,np.inf)))
-        det[k] = np.linalg.det(pcov)
+        popt,pcov = curve_fit(gaus,x,y,p0=[max(sp),mean_init,std_init,g],bounds=((0,5000,-np.inf,-np.inf),(10000,5500,np.inf,np.inf)))
+        amplitude, line_center, line_std, background = popt
+        perr = np.sqrt(np.diag(pcov))
         
-        if((det[k]==0)or(np.log10(det[k])>50)or(popt[3]>0)):
-            flag[k] = 1
+        if(perr[0]>0):
+            snr_amplitude = amplitude/perr[0]
         else:
+             snr_amplitude = 0
+
+        residuals = sp-gaus(wv,*popt)
+  
+
+        chi_squared = np.sum(((sp-gaus(wv,*popt))/sp_err)**2)
+        degrees_of_freedom = len(wv) - len(popt)
+
+        if degrees_of_freedom>0:
+            reduced_chi_squared = chi_squared/degrees_of_freedom
+        else:
+            reduced_chi_squared = np.inf
+  
+        fwhm = 2.355 * line_std
+        is_good_fit = True
+
+        if amplitude <= 0 or line_std <= 0:
+            is_good_fit = False
+            print('mala amplitude',amplitude)
+    
+        if snr_amplitude<MIN_SNR_AMPLITUDE:
+            is_good_fit = False
+            print('mal snr',snr_amplitude,MIN_SNR_AMPLITUDE)
+    
+        if reduced_chi_squared > MAX_REDUCED_CHI2:
+            is_good_fit = False
+            print('mal chi',reduced_chi_squared,MAX_REDUCED_CHI2)
+    
+        if not (MIN_FWHM < fwhm < MAX_FWHM):
+            is_good_fit = False
+            print('mal fwhm',fwhm)
+    
+        if is_good_fit:
+            print('good fit')
             tmp = integrate.quad(gaus,oiii_1,oiii_2,args=(popt[0],popt[1],popt[2],0))
             flux[k] = tmp[0]
             err[k] = tmp[1]
             flag[k] = 0
             cen[k] = popt[1]
             vrad[k] = 300000*(popt[1]-oiii)/oiii
-    except:        
+        else:        
+            flag[k] = 1
+            det[k] = np.nan
+    
+    except:
+        print('Fit error')
         flag[k] = 1
         det[k] = np.nan
 
-        
 final = []
 for i in range(len(flag)):
     if(flag[i]==0):
         final.append([pos_fin[i][0],pos_fin[i][1],pos_fin[i][2],pos_fin[i][3],flux[i],cen[i]])
-    
+  
 fin = np.array(final)
 
 
