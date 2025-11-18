@@ -1,8 +1,7 @@
 # pne-slices
 General guide:
 
-- first, masks.py creates masks, pixels have to be manually specified, useful for ppxf and can also be added to the cube for the next steps. 
-- second, cont_jac.py creates original continuum cube and subtracts it from the original cube, generating an emission lines cube.
+- first cont_jac.py creates original continuum cube and subtracts it from the original cube, generating an emission lines cube.
 python cont_jac.py -g ngc4374 -p ../ngc4374
 - third, slicegenerator.py generates the slices from the emission lines cube
  python slicegenerator.py -g ngc4374 -p ../../ngc4374/ -z 0.003392 -e ngc4374emi
