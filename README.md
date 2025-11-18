@@ -1,14 +1,49 @@
-# pne-slices
-General guide:
+The pipeline consists of six sequential scripts designed to transform a raw MUSE data cube ({GALAXY}.fits) into a final PNe catalog ({GALAXY}_pne.cat).
 
-- first cont_jac.py creates original continuum cube and subtracts it from the original cube, generating an emission lines cube.
-python cont_jac.py -g ngc4374 -p ../ngc4374
-- third, slicegenerator.py generates the slices from the emission lines cube
- python slicegenerator.py -g ngc4374 -p ../../ngc4374/ -z 0.003392 -e ngc4374emi
-- fourth, sxtractor.py runs sextractor on the slices
-python sxtractor.py -g ngc4374 -p /mnt/c/Users/ennis/Documents/Work/2023/pne/ngc4374/ -sx /mnt/c/Users/ennis/Documents/Work/2023/pne/
-- fifth, detect.py applies delf method
- python detect.py -g ngc4374 -p ../../ngc4374/ -z 0.003392 
-- sixth, fgran_fluxes uses an adaptation of felipe gran's method to calculate the fluxes
- python fgran_fluxes.py -g ngc4374 -p ../../ngc4374/ -c ngc4374_pne.cat
-- seventh: important_data generates a file with CRVAL and other values for the original and the emission lines cubes
+!! Prerequisites
+Before running the pipeline, ensure you have the necessary Python libraries installed (e.g., numpy, astropy, mpdaf, pandas, photutils, scipy).
+
+You must also have the external program SExtractor (Source Extractor) installed and accessible, with a directory containing its default configuration files (e.g., .param, .conv, .mask).
+
+If you want to run the scripts individually, you should follow this order:
+
+1 - continuum.py 
+
+It creates a continuum image ({GALAXY}_cont.fits) and it generates an emission-line only cube ({GALAXY}emi.fits).
+EXAMPLE: python continuum.py -g ngc4374 -p ../ngc4374 -z 0.003392
+
+2 - slicegenerator.py
+
+Extracts narrow-band image slices covering the redshifted [OIII] line from the emission cube.
+EXAMPLE: python slicegenerator.py -g ngc4374 -p ../../ngc4374/ -z 0.003392 -e ngc4374emi
+
+3 - sxtractor.py
+
+Runs SExtractor con the slices to generate preliminary source catalogs.
+EXAMPLE: python sxtractor.py -g ngc4374 -p /path/to/data/ngc4374/ -sx /path/to/sextractor/defaults/
+
+4 - detect.py
+
+Applies the DELF method and performs Gaussian fitting on the extracted spectral trace to confirm sources and calculate total flux.
+EXAMPLE: python detect.py -g ngc4374 -p ../../ngc4374/ -z 0.003392
+
+5 - fgran_fluxes.py
+
+Calculates aperture-corrected fluxes for the detected PNe across all slices using the generated PNe catalog.
+EXAMPLE: python fgran_fluxes.py -g ngc4374 -p ../../ngc4374/ -c ngc4374_pne.cat
+
+6 - important_data.py 
+
+Extracts key header infromation form the original and emission cubes for later use.
+EXAMPLE python important_data.py -g ngc4374 -p ../../ngc4374/
+
+
+Recommended Usage: Automated Driver Script
+For a cleaner and more professional execution, it is highly recommended to use the driver script, run_pipeline.py, which executes all the above steps in order:
+
+EXAMPLE USAGE
+python run_pipeline.py \
+    --Galaxy ngc4374 \
+    --Path /path/to/your/ngc4374/data/ \
+    --Redshift 0.003392 \
+    --SxPath /path/to/your/sextractor/default/files/
