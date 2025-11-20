@@ -1,3 +1,5 @@
+If using this code, please cite Ennis et al. 2025 (doi:10.48550/arXiv.2511.11479)
+
 The pipeline consists of six sequential scripts designed to transform a raw MUSE data cube ({GALAXY}.fits) into a final PNe catalog ({GALAXY}_pne.cat).
 
 !! Prerequisites
