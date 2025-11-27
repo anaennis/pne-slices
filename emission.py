@@ -99,7 +99,7 @@ def generate_coadded_images(galaxy, total_slices):
     
     # 1. Load all background-subtracted slices
     for i in range(total_slices):
-        filename = f"sub-{i}.fits"
+        filename = f"sub-{galaxy}-{i}.fits"
         try:
             with fits.open(filename) as hdul:
                 if len(hdul) >= 3:
@@ -107,7 +107,7 @@ def generate_coadded_images(galaxy, total_slices):
                     fits_data[i] = hdul[1].data
                     fits_errors[i] = hdul[2].data
                     if i == 0:
-                         print(f"Loaded {total_slices} 'sub-*.fits' files.")
+                         print(f"Loaded background-subtracted files (expecting prefix 'sub-{galaxy}-')")
                 else:
                     print(f"Warning: {filename} missing HDU 2 (Error). Skipping slice {i}.")
         except FileNotFoundError:
