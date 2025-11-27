@@ -143,7 +143,7 @@ for i in range(len(x)):
 
 table = {}
 for i in range(16):
-    sliu = '{}-{}_sliun.fits'.format(galaxy,i)
+    sliu = 'sub-{}-{}.fits'.format(galaxy,i)
     tmp = 'phot_{}'.format(i)
     aperture = CircularAperture(positions,r=3.)
     hdu = fits.open(sliu)

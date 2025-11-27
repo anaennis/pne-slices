@@ -67,24 +67,29 @@ run_script('continuum.py', ['-g', GALAXY, '-p', PATH, '-z', REDSHIFT])
 # ---
 # 2. Generate the slices from the emission lines cube (slicegenerator.py)
 # This script uses the emission cube implicit to the PATH.
-run_script('slicegenerator.py', ['-g', GALAXY, '-p', PATH, '-z', REDSHIFT, '-e', EMISSION_CUBE_PREFIX])
+run_script('slicegenerator.py', ['-g', GALAXY, '-p', PATH, '-z', REDSHIFT])
 
 # ---
-# 3. Run sextractor on the slices (sxtractor.py)
+# 3. Generate the emission only slices (emission.py)
+# The -p path here should point to where the slices are located (PATH).
+run_script('emission.py', ['-g', GALAXY, '-p', PATH, '-x_start', '200', '-x_end', '300', '-y_start', '100', '-y_end', '200'])
+
+# ---
+# 4. Run sextractor on the slices (sxtractor.py)
 # The -p path here should point to where the slices are located (PATH).
 run_script('sxtractor.py', ['-g', GALAXY, '-p', PATH, '-sx', SX_PATH])
 
 # ---
-# 4. Apply DELF method, Gaussian fitting, and flux integration (detect.py)
+# 5. Apply DELF method, Gaussian fitting, and flux integration (detect.py)
 run_script('detect.py', ['-g', GALAXY, '-p', PATH, '-z', REDSHIFT])
 
 # ---
-# 5. Calculate final fluxes using an adaptation of Felipe Gran's method (fgran_fluxes.py)
+# 6. Calculate final fluxes using an adaptation of Felipe Gran's method (fgran_fluxes.py)
 # The -c argument uses the output catalog from detect.py.
 run_script('fgran_fluxes.py', ['-g', GALAXY, '-p', PATH, '-c', PNE_CATALOG])
 
 # ---
-# 6. Generate a file with CRVAL and other values (important_data.py)
+# 7. Generate a file with CRVAL and other values (important_data.py)
 run_script('important_data.py', ['-g', GALAXY, '-p', PATH])
 
 print("\n\n✅ Pipeline completed successfully!")

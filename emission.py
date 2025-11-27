@@ -37,7 +37,7 @@ def process_single_slice(galaxy, cont_filename, slice_number, region_slice):
     :rtype: bool
     """
     emission_line_filename = f'{galaxy}-{slice_number}_sliun.fits'
-    output_filename = f'sub-{slice_number}.fits'
+    output_filename = f'sub-{galaxy}-{slice_number}.fits'
 
     try:
         # Open FITS files for the unbinned slice and the continuum image
@@ -148,7 +148,6 @@ def generate_coadded_images(galaxy, total_slices):
             # 5. Save the Coadded Image
             # Output format: HDU 1 = Data, HDU 2 = Error
             
-            # The original script outputs to {GALAXY}-{i-1}_slinan.fits
             output_index = i - 1
             output_filename = f"{galaxy}-{output_index}_slinan.fits"
             
