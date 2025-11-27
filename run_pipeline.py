@@ -20,6 +20,9 @@ GALAXY = args.Galaxy
 PATH = os.path.abspath(args.Path) # Use absolute path for robustness
 REDSHIFT = str(args.Redshift)
 SX_PATH = args.SxPath
+# Determine where helper scripts live. Scripts live in the same folder as this runner.
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPTS_DIR = THIS_DIR
 # Derived filenames
 EMISSION_CUBE_PREFIX = f"{GALAXY}emi"
 PNE_CATALOG = f"{GALAXY}_pne.cat"
@@ -28,31 +31,38 @@ PNE_CATALOG = f"{GALAXY}_pne.cat"
 def run_script(script_name, arguments):
     """Executes a script using subprocess and checks for errors."""
     print(f"\n--- Starting: {script_name} ---")
-    command = [sys.executable, script_name] + arguments
-    
+    # Resolve script path inside the SCRIPTS_DIR unless an absolute path was provided
+    if os.path.isabs(script_name):
+        script_path = script_name
+    else:
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+
+    command = [sys.executable, script_path] + arguments
+
     try:
-        # Check=True will raise a CalledProcessError if the script returns a non-zero exit code
-        subprocess.run(command, check=True, cwd=os.getcwd(), text=True, capture_output=False)
+        # Run the script with the working directory set to the data/output path (PATH)
+        # so scripts operate on data located elsewhere.
+        subprocess.run(command, check=True, cwd=PATH, text=True, capture_output=False)
         print(f"--- Finished: {script_name} successfully ---")
     except subprocess.CalledProcessError as e:
         print(f"ERROR: {script_name} failed.")
         print(f"Return Code: {e.returncode}")
         sys.exit(1)
     except FileNotFoundError:
-        print(f"ERROR: Python interpreter or script '{script_name}' not found.")
+        print(f"ERROR: Python interpreter or script '{script_path}' not found.")
         sys.exit(1)
 
 # --- 3. Pipeline Steps (Sequential Execution) ---
 
 print(f"Starting PNe Pipeline for Galaxy: {GALAXY} at Path: {PATH}")
+print(f"Resolved scripts directory: {SCRIPTS_DIR}")
 
-# 1. Create original continuum cube and subtract it (cont_jac.py)
+# 1. Create original continuum cube and subtract it (continuum.py)
 
-original_cwd = os.getcwd()
-os.chdir(PATH)
-run_script('cont_jac.py', ['-g', GALAXY, '-p', '.', '-z', REDSHIFT])
-os.chdir(original_cwd)
-# After this, the emission lines cube is assumed to be named '{GALAXY}emi.fits'
+# Run continuum.py (scripts live in `scripts/`, data in `PATH`).
+# Pass the full data path to the script using `-p` so it knows where to write outputs.
+run_script('continuum.py', ['-g', GALAXY, '-p', PATH, '-z', REDSHIFT])
+# After this, the emission lines cube is assumed to be named '{GALAXY}emi.fits' in `PATH`
 
 # ---
 # 2. Generate the slices from the emission lines cube (slicegenerator.py)

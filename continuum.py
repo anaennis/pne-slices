@@ -1,14 +1,13 @@
 """
-continuum.py: Continuum Subtraction and Emission Cube Generation
+continuum.py: Continuum Subtraction 
 
 Calculates the continuum flux within a specified wavelength window near the 
-[O III] line and subtracts it from the MUSE data cube to produce a pure 
-emission-line cube.
+[O III] line.
 
 Requires: mpdaf, astropy
 """
 
-from mpdaf.obj import Cube,Spectrum
+from mpdaf.obj import Cube
 import os
 import argparse
 
