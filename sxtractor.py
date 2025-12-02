@@ -1,4 +1,5 @@
 import os
+import subprocess
 from astropy.io import fits
 import fnmatch
 
@@ -16,19 +17,32 @@ parser.add_argument("-p", "--Path", help = "Path where slices are")
 args = parser.parse_args()
 
 galaxy = args.Galaxy
-path = args.Path
-# path2 = args.Sx
+path = os.path.abspath(args.Path)
 
-os.chdir(path)
+# Directory containing this script; run SExtractor commands from here as requested
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Count available 'slinan' files in the data path
 count = len(fnmatch.filter(os.listdir(path), '*nan*'))
-ph = path + "/" + galaxy
+ph = os.path.join(path, galaxy)
 
-# os.chdir(path2)
-
-i = 0
 for i in range(count):
     i2 = str(i)
-    pt1 = "sex "+ph+"-"+i2+"_slinan.fits[1]"+" -CATALOG_NAME "+ph+"-"+i2+".cat -SEEING_FWHM 0.8 -CHECKIMAGE_NAME "+ph+"check_"+i2+".fits,"+ph+"checkrms_"+i2+".fits"
-    pt2 = " -VERBOSE_TYPE FULL -DETECT_THRESH 1.1 -DETECT_MINAREA 4 -WEIGHT_TYPE map_Var -WEIGHT_IMAGE "+ph+"-"+i2+"_slinan.fits[2]"
-    sx = pt1+pt2
-    os.system(sx)
+    in_file = f"{ph}-{i2}_slinan.fits[1]"
+    catalog_name = f"{ph}-{i2}.cat"
+    checkimg = f"{ph}check_{i2}.fits,{ph}checkrms_{i2}.fits"
+    weight_img = f"{ph}-{i2}_slinan.fits[2]"
+
+    cmd = (
+        f"sex {in_file} -CATALOG_NAME {catalog_name} -SEEING_FWHM 0.8"
+        f" -CHECKIMAGE_NAME {checkimg} -VERBOSE_TYPE FULL -DETECT_THRESH 1.1"
+        f" -DETECT_MINAREA 4 -WEIGHT_TYPE map_Var -WEIGHT_IMAGE {weight_img}"
+    )
+
+    try:
+        print(f"Running SExtractor for slice {i} (cwd={THIS_DIR}):\n  {cmd}")
+        subprocess.run(cmd, shell=True, check=True, cwd=THIS_DIR, universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        print(f"SExtractor failed for slice {i} with return code {e.returncode}")
+        # continue to next slice rather than aborting entire loop
+        continue

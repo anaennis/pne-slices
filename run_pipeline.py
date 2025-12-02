@@ -2,6 +2,7 @@ import argparse
 import subprocess
 import os
 import sys
+import glob
 
 # --- 1. Define and Parse Arguments ---
 parser = argparse.ArgumentParser(
@@ -11,7 +12,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-g", "--Galaxy", required=True, help="Galaxy name (e.g., ngc4374)")
 parser.add_argument("-p", "--Path", required=True, help="Path to the main data directory (e.g., ../ngc4374/)")
 parser.add_argument("-z", "--Redshift", required=True, type=float, help="Redshift of the galaxy (e.g., 0.003392)")
-parser.add_argument("-sx", "--SxPath", required=True, help="Path where SExtractor default files are (e.g., /mnt/c/Users/ennis/Documents/Work/2023/pne/)")
+# parser.add_argument("-sx", "--SxPath", required=True, help="Path where SExtractor default files are (e.g., /mnt/c/Users/ennis/Documents/Work/2023/pne/)")
 # Optional region arguments to forward to emission.py (defaults match emission.py)
 parser.add_argument("--x_start", type=int, default=200, help="X-coordinate start for background region.")
 parser.add_argument("--x_end", type=int, default=300, help="X-coordinate end for background region.")
@@ -24,7 +25,7 @@ args = parser.parse_args()
 GALAXY = args.Galaxy
 PATH = os.path.abspath(args.Path) # Use absolute path for robustness
 REDSHIFT = str(args.Redshift)
-SX_PATH = args.SxPath
+# SX_PATH = args.SxPath
 # Determine where helper scripts live. Scripts live in the same folder as this runner.
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = THIS_DIR
@@ -41,20 +42,49 @@ def run_script(script_name, arguments):
         script_path = script_name
     else:
         script_path = os.path.join(SCRIPTS_DIR, script_name)
+    # If script_path doesn't exist, try to locate it anywhere under THIS_DIR
+    if not os.path.isfile(script_path):
+        print(f"Warning: script not found at expected path: {script_path}")
+        # try a recursive search for the script name in the repository
+        candidates = []
+        for fn in glob.glob(os.path.join(THIS_DIR, '**', script_name), recursive=True):
+            if os.path.isfile(fn):
+                candidates.append(fn)
+        if len(candidates) == 1:
+            script_path = candidates[0]
+            print(f"Found script at: {script_path}; will use this path.")
+        elif len(candidates) > 1:
+            print("Multiple candidates found for script; please disambiguate:")
+            for c in candidates:
+                print(f" - {c}")
+            sys.exit(1)
+        else:
+            # show available files in scripts dir for easier debugging
+            print(f"Looking in scripts directory: {SCRIPTS_DIR}")
+            try:
+                for p in sorted(os.listdir(SCRIPTS_DIR)):
+                    print(f" - {p}")
+            except Exception:
+                pass
+            print(f"ERROR: Script '{script_name}' not found. Ensure it exists next to run_pipeline.py or provide an absolute path.")
+            sys.exit(1)
+
+    if not os.path.exists(sys.executable):
+        print(f"ERROR: Python interpreter not found at '{sys.executable}'.")
+        sys.exit(1)
 
     command = [sys.executable, script_path] + arguments
 
     try:
         # Run the script with the working directory set to the data/output path (PATH)
         # so scripts operate on data located elsewhere.
-        subprocess.run(command, check=True, cwd=PATH, text=True, capture_output=False)
+        print(f"Running: {command}  (cwd={PATH})")
+        # Use `universal_newlines=True` for Python 3.6 compatibility
+        subprocess.run(command, check=True, cwd=PATH, universal_newlines=True)
         print(f"--- Finished: {script_name} successfully ---")
     except subprocess.CalledProcessError as e:
         print(f"ERROR: {script_name} failed.")
         print(f"Return Code: {e.returncode}")
-        sys.exit(1)
-    except FileNotFoundError:
-        print(f"ERROR: Python interpreter or script '{script_path}' not found.")
         sys.exit(1)
 
 # --- 3. Pipeline Steps (Sequential Execution) ---
