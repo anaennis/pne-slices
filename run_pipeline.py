@@ -89,7 +89,7 @@ run_script('emission.py', [
 # ---
 # 4. Run sextractor on the slices (sxtractor.py)
 # The -p path here should point to where the slices are located (PATH).
-run_script('sxtractor.py', ['-g', GALAXY, '-p', PATH, '-sx', SX_PATH])
+run_script('sxtractor.py', ['-g', GALAXY, '-p', PATH])
 
 # ---
 # 5. Apply DELF method, Gaussian fitting, and flux integration (detect.py)

@@ -10,20 +10,20 @@ parser=argparse.ArgumentParser()
 
 parser.add_argument("-g", "--Galaxy", help = "Galaxy name")
 parser.add_argument("-p", "--Path", help = "Path where slices are")
-parser.add_argument("-sx", "--Sx", help = "Path where SExtractor default files are")
+# parser.add_argument("-sx", "--Sx", help = "Path where SExtractor default files are")
 
 
 args = parser.parse_args()
 
 galaxy = args.Galaxy
 path = args.Path
-path2 = args.Sx
+# path2 = args.Sx
 
 os.chdir(path)
 count = len(fnmatch.filter(os.listdir(path), '*nan*'))
 ph = path + "/" + galaxy
 
-os.chdir(path2)
+# os.chdir(path2)
 
 i = 0
 for i in range(count):
