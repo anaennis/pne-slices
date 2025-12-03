@@ -67,6 +67,21 @@ def process_single_slice(galaxy, cont_filename, slice_number, region_slice):
             # Update the data in the HDU list
             hdus[1].data = resta.astype(np.float32)
             
+            # Copy WCS from original slice to output headers
+            # Copy WCS keywords from the original image HDU header to all output HDUs
+            if hdus[1].header:
+                for hdu_idx in [0, 1, 2]:  # primary, data, error
+                    if hdu_idx < len(hdus):
+                        # Copy WCS-related keywords
+                        wcs_keywords = ['WCSAXES', 'CRPIX1', 'CRPIX2', 'CRVAL1', 'CRVAL2', 
+                                       'CTYPE1', 'CTYPE2', 'CUNIT1', 'CUNIT2',
+                                       'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2',
+                                       'PC1_1', 'PC1_2', 'PC2_1', 'PC2_2',
+                                       'CDELT1', 'CDELT2', 'CROTA1', 'CROTA2']
+                        for key in wcs_keywords:
+                            if key in hdus[1].header:
+                                hdus[hdu_idx].header[key] = hdus[1].header[key]
+            
             # --- Write the result ---
             hdus.writeto(output_filename, overwrite=True)
             print(f"✅ Subtracted: {emission_line_filename} (k={k:.4f}) -> {output_filename}")
@@ -151,10 +166,33 @@ def generate_coadded_images(galaxy, total_slices):
             output_index = i - 1
             output_filename = f"{galaxy}-{output_index}_slinan.fits"
             
+            # Load WCS from one of the center slice's original file
+            center_slice_filename = f'{galaxy}-{slice_indices[1]}_sliun.fits'
+            wcs_header = None
+            try:
+                with fits.open(center_slice_filename) as wcs_hdul:
+                    if len(wcs_hdul) > 1 and wcs_hdul[1].header:
+                        wcs_header = wcs_hdul[1].header.copy()
+            except:
+                pass
+            
             # Create a new FITS HDUList
             primary_hdu = fits.PrimaryHDU(header=template_header) 
             image_hdu = fits.ImageHDU(coadded_data, name='DATA')
             error_hdu = fits.ImageHDU(coadded_error, name='ERR')
+            
+            # Copy WCS keywords to all HDUs if available
+            if wcs_header:
+                wcs_keywords = ['WCSAXES', 'CRPIX1', 'CRPIX2', 'CRVAL1', 'CRVAL2', 
+                               'CTYPE1', 'CTYPE2', 'CUNIT1', 'CUNIT2',
+                               'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2',
+                               'PC1_1', 'PC1_2', 'PC2_1', 'PC2_2',
+                               'CDELT1', 'CDELT2', 'CROTA1', 'CROTA2']
+                for hdu in [primary_hdu, image_hdu, error_hdu]:
+                    for key in wcs_keywords:
+                        if key in wcs_header:
+                            hdu.header[key] = wcs_header[key]
+            
             hdul = fits.HDUList([primary_hdu, image_hdu, error_hdu])
             
             hdul.writeto(output_filename, overwrite=True)
