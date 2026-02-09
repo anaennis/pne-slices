@@ -14,6 +14,7 @@ import glob
 import re
 
 import argparse 
+import sys
 
 parser = argparse.ArgumentParser()
 
@@ -104,8 +105,9 @@ for left in sorted(cat_indices):
 
                     mag = [ar_cen, ar_left, ar_right]
                     mags = np.array(mag)
-                    which = np.where(max(mags[:,4]))
-                    values = mags[which][0]
+                    # Choose the brightest of the three slice matches by mag column
+                    idx = int(np.argmax(mags[:, 4]))
+                    values = mags[idx]
                     cat_t.append(values)
         cat[cat_nm] = cat_t
     
@@ -139,6 +141,15 @@ for left in left_keys[1:]:
             cat_tmp.append(values)
    
 cat_fin = np.array(cat_tmp)
+
+if cat_fin.size == 0:
+    print("No candidates found across consecutive slices; writing empty catalogs.")
+    empty_fin = pd.DataFrame([], columns=['ra', 'dec', 'x', 'y', 'flux', 'cen'])
+    catalogue = "./{}_pne.cat".format(galaxy)
+    empty_fin.to_csv(catalogue, sep=' ', index=False, header=False)
+    catv = "./{}_vrad_wcs.cat".format(galaxy)
+    np.savetxt(catv, np.empty((0, 3)))
+    sys.exit(0)
 
 
 # we perform aperture photometry

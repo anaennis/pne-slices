@@ -5,7 +5,7 @@ The pipeline consists of six sequential scripts designed to transform a raw MUSE
 !! Prerequisites
 Before running the pipeline, ensure you have the necessary Python libraries installed (e.g., numpy, astropy, mpdaf, pandas, photutils, scipy).
 
-You must also have the external program SExtractor (Source Extractor) installed and accessible, with a directory containing its default configuration files (e.g., .param, .conv, .mask).
+You must also have the external program SExtractor (Source Extractor) installed and accessible. The default configuration files used by this pipeline are provided in this repository.
 
 If you want to run the scripts individually, you should follow this order:
 
@@ -26,7 +26,7 @@ EXAMPLE: python emission.py -g ngc4374 -p ../../ngc4374 -x_start=100 y_start=100
 4 - sxtractor.py
 
 Runs SExtractor con the slices to generate preliminary source catalogs.
-EXAMPLE: python sxtractor.py -g ngc4374 -p /path/to/data/ngc4374/ -sx /path/to/sextractor/defaults/
+EXAMPLE: python sxtractor.py -g ngc4374 -p /path/to/data/ngc4374/
 
 5 - detect.py
 
@@ -51,5 +51,4 @@ EXAMPLE USAGE
 python run_pipeline.py \
     --Galaxy ngc4374 \
     --Path /path/to/your/ngc4374/data/ \
-    --Redshift 0.003392 \
-    --SxPath /path/to/your/sextractor/default/files/
+    --Redshift 0.003392

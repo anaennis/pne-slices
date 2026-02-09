@@ -1,10 +1,17 @@
-#astropy-photutils-related functions
-from photutils import CircularAperture, CircularAnnulus
+# astropy-photutils-related functions
+try:
+    from photutils.aperture import CircularAperture, CircularAnnulus, aperture_photometry
+except ImportError:
+    # Fallback for older photutils versions
+    from photutils import CircularAperture, CircularAnnulus, aperture_photometry
 from astropy.stats import gaussian_sigma_to_fwhm
 from astropy.stats import sigma_clipped_stats
 from astropy.visualization import simple_norm
-from photutils import aperture_photometry
-from photutils import DAOStarFinder
+try:
+    from photutils.detection import DAOStarFinder
+except ImportError:
+    # Fallback for older photutils versions
+    from photutils import DAOStarFinder
 from astropy.table import Table
 from astropy.io import fits
 from astropy.modeling import models

@@ -12,7 +12,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-g", "--Galaxy", required=True, help="Galaxy name (e.g., ngc4374)")
 parser.add_argument("-p", "--Path", required=True, help="Path to the main data directory (e.g., ../ngc4374/)")
 parser.add_argument("-z", "--Redshift", required=True, type=float, help="Redshift of the galaxy (e.g., 0.003392)")
-# parser.add_argument("-sx", "--SxPath", required=True, help="Path where SExtractor default files are (e.g., /mnt/c/Users/ennis/Documents/Work/2023/pne/)")
 # Optional region arguments to forward to emission.py (defaults match emission.py)
 parser.add_argument("--x_start", type=int, default=200, help="X-coordinate start for background region.")
 parser.add_argument("--x_end", type=int, default=300, help="X-coordinate end for background region.")
@@ -25,7 +24,6 @@ args = parser.parse_args()
 GALAXY = args.Galaxy
 PATH = os.path.abspath(args.Path) # Use absolute path for robustness
 REDSHIFT = str(args.Redshift)
-# SX_PATH = args.SxPath
 # Determine where helper scripts live. Scripts live in the same folder as this runner.
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = THIS_DIR
