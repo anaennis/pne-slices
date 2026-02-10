@@ -148,14 +148,13 @@ def generate_coadded_images(galaxy, total_slices):
         # Check if all 3 required slices are available
         if all(idx in fits_data for idx in slice_indices):
             
-            # 3. Coadd Data (Simple Average)
+            # 3. Coadd Data (Sum)
             data_to_coadd = [fits_data[idx] for idx in slice_indices]
-            coadded_data = np.mean(data_to_coadd, axis=0)
+            coadded_data = np.sum(data_to_coadd, axis=0)
 
-            # 4. Propagate Errors (Quadrature Sum for Average)
-            # Error of the average is sqrt(sum(sigma_i^2)) / N, where N=3
+            # 4. Propagate Errors (Quadrature Sum for Sum)
             error_squares = sum(fits_errors[idx]**2 for idx in slice_indices)
-            coadded_error = np.sqrt(error_squares) / 3.0
+            coadded_error = np.sqrt(error_squares)
 
             coadded_data = coadded_data.astype(np.float32)
             coadded_error = coadded_error.astype(np.float32)
