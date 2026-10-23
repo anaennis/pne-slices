@@ -1,2 +1,6 @@
 diagnostic-NEW-ngc1387.ipynb
 continuum.ipynb
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/

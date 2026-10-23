@@ -1,0 +1,8 @@
+numpy
+scipy
+pandas<3.0  # detect.py and fgran_fluxes.py use read_csv(delim_whitespace=...), removed in pandas 3.0
+matplotlib
+astropy
+photutils
+mpdaf
+# SExtractor is also required (external program, not pip-installable) -- see README.md
